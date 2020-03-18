@@ -138,11 +138,11 @@ class CloudshopApiClient extends Component
      * @throws InvalidConfigException
      */
     protected function _createApiRequest(string $api_method, string $request_method = "GET") {
-        $client = new Client(/*[
+        $client = new Client([
             'requestConfig' => [
                 'format' => Client::FORMAT_JSON
             ]
-        ]*/);
+        ]);
 
         $request = $client->createRequest()
             ->setMethod("GET")
