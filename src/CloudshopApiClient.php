@@ -9,10 +9,16 @@
 namespace skeeks\yii2\cloudshopApiClient;
 
 use yii\base\Component;
+use yii\base\Exception;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\httpclient\Client;
 
 /**
+ * @property array $accessCredentials
+ * @property string $accessToken
+ * @property string $accessCompany
+ *
  * @author Semenov Alexander <semenov@skeeks.com>
  */
 class CloudshopApiClient extends Component
@@ -55,10 +61,14 @@ class CloudshopApiClient extends Component
     }
 
     /**
-     * @throws \yii\base\InvalidConfigException
+     * Получение данных авторизации из апи
+     *
+     * @return array
+     * @throws Exception
+     * @throws InvalidConfigException
      * @throws \yii\httpclient\Exception
      */
-    public function getAccessCredentials()
+    protected function _getAccessCredentialsFromApi()
     {
         $client = new Client([
             'requestConfig' => [
@@ -68,7 +78,7 @@ class CloudshopApiClient extends Component
 
         $request = $client->createRequest()
             ->setMethod("GET")
-            ->setUrl($this->base_api_url . "/profile")
+            ->setUrl($this->base_api_url . "//profile")
             ->addHeaders(['Authorization' => 'Basic '.base64_encode($this->email.":".$this->password)])
             ->setOptions([
                 'timeout'      => $this->request_timeout,
@@ -78,7 +88,122 @@ class CloudshopApiClient extends Component
         $response = $request->send();
 
         if (!$response->isOk) {
-            print_r($response->data);
+            throw new Exception("Error request:" . $response->content);
         }
+
+        return (array) $response->data;
+    }
+
+
+    /**
+     * @return array
+     * @throws Exception
+     * @throws InvalidConfigException
+     * @throws \yii\httpclient\Exception
+     */
+    public function getAccessCredentials()
+    {
+        $data = \Yii::$app->cache->get("cloudshop_access");
+        
+        if ($data === false) {
+            $data = $this->_getAccessCredentialsFromApi();
+            \Yii::$app->cache->set("cloudshop_access", $data, 3600*24);
+        }
+
+        return (array) $data;
+    }
+
+    /**
+     * @return string
+     */
+    public function getAccessToken()
+    {
+        $data = $this->accessCredentials;
+        return (string) ArrayHelper::getValue($data, 'data.0.token');
+    }
+    
+    /**
+     * @return string
+     */
+    public function getAccessCompany()
+    {
+        $data = $this->accessCredentials;
+        return (string) key($data['data'][0]['positions']);
+    }
+
+    /**
+     * @param string $api_method
+     * @param string $request_method
+     * @return \yii\httpclient\Request
+     * @throws InvalidConfigException
+     */
+    protected function _createApiRequest(string $api_method, string $request_method = "GET") {
+        $client = new Client(/*[
+            'requestConfig' => [
+                'format' => Client::FORMAT_JSON
+            ]
+        ]*/);
+
+        $request = $client->createRequest()
+            ->setMethod("GET")
+            ->setUrl($this->base_api_url . $api_method)
+            ->addHeaders(['Authorization' => 'Bearer ' . $this->accessToken])
+            ->setOptions([
+                'timeout'      => $this->request_timeout,
+                'maxRedirects' => $this->request_maxRedirects,
+            ]);
+
+        return $request;
+    }
+
+    /**
+     * Данные профиля
+     * 
+     * @return array
+     * @throws InvalidConfigException
+     * @throws \yii\httpclient\Exception
+     */
+    public function getProfileApiMethod()
+    {
+        $response = $this->_createApiRequest("/profile")->send();
+        return (array) $response->data;
+    }
+    
+    /**
+     * Данные по складам
+     * 
+     * @return array
+     * @throws InvalidConfigException
+     * @throws \yii\httpclient\Exception
+     */
+    public function getStoresApiMethod()
+    {
+        $method = "/data/" . $this->accessCompany . "/stores";
+        $response = $this->_createApiRequest($method)->send();
+        return (array) $response->data;
+    }
+    
+    /**
+     * @return array
+     * @throws InvalidConfigException
+     * @throws \yii\httpclient\Exception
+     */
+    public function getAccountsApiMethod()
+    {
+        $method = "/data/" . $this->accessCompany . "/accounts";
+        $response = $this->_createApiRequest($method)->send();
+        return (array) $response->data;
+    }
+    
+    /**
+     * @return array
+     * @throws InvalidConfigException
+     * @throws \yii\httpclient\Exception
+     */
+    public function getCatalogApiMethod()
+    {
+        $method = "/data/" . $this->accessCompany . "/catalog";
+        $response = $this->_createApiRequest($method)->send();
+        return (array) $response->data;
     }
 }

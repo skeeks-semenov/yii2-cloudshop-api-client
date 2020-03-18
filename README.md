@@ -22,7 +22,7 @@ or add
 ```
 
 
-How to use
+Configure your application
 ----------
 
 ```php
@@ -39,6 +39,15 @@ How to use
     ]
 ]
 
+```
+How to use
+----------
+
+```php
+\Yii::$app->cloudshopApiClient->getProfileApiMethod();
+\Yii::$app->cloudshopApiClient->getStoresApiMethod();
+\Yii::$app->cloudshopApiClient->getAccountsApiMethod();
+\Yii::$app->cloudshopApiClient->getCatalogApiMethod();
 ```
 
 ___
