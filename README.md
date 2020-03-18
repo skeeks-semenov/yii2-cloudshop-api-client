@@ -34,6 +34,8 @@ Configure your application
         'cloudshopApiClient' =>
         [
             'class'         => 'skeeks\yii2\cloudshopApiClient\CloudshopApiClient',
+            'email'         => '',
+            'password'      => '',
         ],
     //....
     ]
