@@ -200,9 +200,12 @@ class CloudshopApiClient extends Component
      * @throws InvalidConfigException
      * @throws \yii\httpclient\Exception
      */
-    public function getCatalogApiMethod()
+    public function getCatalogApiMethod($filters = [])
     {
         $method = "/data/" . $this->accessCompany . "/catalog";
+        if ($filters) {
+            $method .= "?" . http_build_query($filters);
+        }
         $response = $this->_createApiRequest($method)->send();
         return (array) $response->data;
     }
