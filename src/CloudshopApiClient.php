@@ -49,12 +49,17 @@ class CloudshopApiClient extends Component
     public $request_maxRedirects = 2;
 
     /**
+     * @var string
+     */
+    public $cache_key = 'cloudshop_access';
+
+    /**
      * @throws InvalidConfigException
      */
     public function init()
     {
         if (!$this->email || !$this->password) {
-            throw new InvalidConfigException("Need email or password");
+            //throw new InvalidConfigException("Need email or password");
         }
 
         return parent::init();
@@ -103,11 +108,16 @@ class CloudshopApiClient extends Component
      */
     public function getAccessCredentials()
     {
-        $data = \Yii::$app->cache->get("cloudshop_access");
+        $data = \Yii::$app->cache->get($this->cache_key);
         
         if ($data === false) {
             $data = $this->_getAccessCredentialsFromApi();
-            \Yii::$app->cache->set("cloudshop_access", $data, 3600*24);
+
+            if (!$data || $data['error']) {
+                throw new Exception("Ошибка получения ключа доступа к апи: " . print_r($data, true) . " Пользователь: " . $this->email);
+            }
+
+            \Yii::$app->cache->set($this->cache_key, $data, 3600*24);
         }
 
         return (array) $data;
