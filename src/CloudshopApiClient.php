@@ -41,7 +41,7 @@ class CloudshopApiClient extends Component
     /**
      * @var int
      */
-    public $request_timeout = 5;
+    public $request_timeout = 20;
 
     /**
      * @var int
