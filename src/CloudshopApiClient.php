@@ -12,6 +12,7 @@ use yii\base\Component;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Json;
 use yii\httpclient\Client;
 
 /**
@@ -108,7 +109,11 @@ class CloudshopApiClient extends Component
      */
     public function getAccessCredentials()
     {
-        $data = \Yii::$app->cache->get($this->cache_key);
+        $cacheKey = $this->cache_key . md5(Json::encode([
+            $this->password,
+            $this->email,
+        ]));
+        $data = \Yii::$app->cache->get($cacheKey);
         
         if ($data === false) {
             $data = $this->_getAccessCredentialsFromApi();
@@ -117,7 +122,7 @@ class CloudshopApiClient extends Component
                 throw new Exception("Ошибка получения ключа доступа к апи: " . print_r($data, true) . " Пользователь: " . $this->email);
             }
 
-            \Yii::$app->cache->set($this->cache_key, $data, 3600*24);
+            \Yii::$app->cache->set($cacheKey, $data, 3600*24);
         }
 
         return (array) $data;
